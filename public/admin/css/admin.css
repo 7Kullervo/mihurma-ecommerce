@@ -1,4 +1,4 @@
-@import url('../css/style.css');
+
 
 .admin-shell{ display:grid; grid-template-columns: 270px 1fr; min-height:100vh; }
 .admin-sidebar{ background: var(--brown-strong); color: var(--gold-soft); padding: 26px 18px; position:sticky; top:0; height:100vh; overflow-y:auto; }

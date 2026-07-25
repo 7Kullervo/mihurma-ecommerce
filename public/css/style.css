@@ -51,7 +51,7 @@
 html{ scroll-behavior: smooth; }
 body{
   margin: 0;
-  background: url('../assets/Mihurma_Website_Background.PNG') center/cover fixed no-repeat, var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
   transition: background var(--transition), color var(--transition);

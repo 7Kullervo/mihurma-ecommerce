@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Product — Mihurma Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <div id="admin-sidebar-slot"></div>
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1 id="page-title">Add Product</h1>
+        <a href="products.html" class="btn btn-outline">← Back to Products</a>
+      </div>
+      <div class="help-banner">
+        💡 Upload photos straight from your device below — no image links needed. Click any photo to make it the
+        main thumbnail customers see in the shop.
+      </div>
+
+      <div class="two-col-form">
+        <div class="form-card">
+          <div class="field"><label>Product title</label><input id="f-title" placeholder="e.g. Royal Velvet Hat"></div>
+          <div class="field"><label>Description</label><textarea id="f-description" rows="5" placeholder="Describe the product…"></textarea></div>
+          <div class="two-col-form">
+            <div class="field"><label>Price ($)</label><input id="f-price" type="number" step="0.01" min="0" placeholder="49.99"></div>
+            <div class="field"><label>Compare-at price ($) <span style="font-weight:400;">(optional, for sale badge)</span></label><input id="f-compare" type="number" step="0.01" min="0" placeholder="69.99"></div>
+          </div>
+          <div class="two-col-form">
+            <div class="field"><label>Stock quantity</label><input id="f-stock" type="number" min="0" placeholder="25"></div>
+            <div class="field">
+              <label>Category</label>
+              <select id="f-category"><option value="">— None —</option></select>
+            </div>
+          </div>
+          <div class="field" style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="f-featured" style="width:auto;">
+            <label for="f-featured" style="margin:0;">Show on homepage (Featured)</label>
+          </div>
+          <div class="field" id="status-field" style="display:none;">
+            <label>Status</label>
+            <select id="f-status"><option value="active">Active (visible in shop)</option><option value="draft">Draft (hidden)</option></select>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:10px;color:var(--text-soft);">Product Photos</label>
+          <div class="upload-zone" id="upload-zone">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--gold-strong)" stroke-width="1.6" style="margin:0 auto 10px;"><path d="M12 16V4m0 0 4 4m-4-4L8 8"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            <p style="font-weight:600;">Click to choose photos, or drag them here</p>
+            <p style="color:var(--text-soft);font-size:.82rem;margin-top:6px;">JPG, PNG, WEBP or GIF · up to 8 photos · 5MB each</p>
+            <input type="file" id="file-input" accept="image/*" multiple>
+          </div>
+          <div class="image-preview-grid" id="preview-grid"></div>
+          <p class="field-hint" style="margin-top:14px;">The photo with the gold outline is the main thumbnail. Click any other photo to make it the main one.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:26px;display:flex;gap:14px;">
+        <button id="save-btn" class="btn btn-primary">Save Product</button>
+        <a href="products.html" class="btn btn-outline">Cancel</a>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="js/admin-layout.js"></script>
+  <script src="js/admin-add-product.js"></script>
+</body>
+</html>

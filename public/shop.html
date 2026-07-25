@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Mihurma</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .shop-layout{ display:grid; grid-template-columns: 240px 1fr; gap: 34px; padding: 40px 0 80px; align-items:start; }
+  .filters{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 22px; position:sticky; top: 90px; }
+  .filters h4{ font-size:.9rem; text-transform:uppercase; letter-spacing:.04em; margin-bottom:14px; color:var(--text-soft); }
+  .filters .cat-list{ list-style:none; padding:0; margin:0 0 24px; display:flex; flex-direction:column; gap:8px; }
+  .filters .cat-list a{ font-size:.92rem; color:var(--text); padding:6px 8px; border-radius:8px; transition: background var(--transition), color var(--transition); }
+  .filters .cat-list a:hover, .filters .cat-list a.active{ background: var(--bg-alt); color: var(--gold-strong); }
+  .shop-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+  .shop-top select{ padding:9px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text); }
+  @media (max-width: 800px){ .shop-layout{ grid-template-columns: 1fr; } .filters{ position:static; } }
+</style>
+</head>
+<body data-page="shop">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div class="shop-layout">
+      <aside class="filters">
+        <h4>Categories</h4>
+        <ul class="cat-list" id="category-list">
+          <li><a href="shop.html" data-cat="">All Products</a></li>
+        </ul>
+        <h4>Sort By</h4>
+        <select id="sort-select" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);">
+          <option value="">Newest</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="rating">Top Rated</option>
+        </select>
+      </aside>
+      <div>
+        <div class="shop-top">
+          <h2 id="shop-title">Shop</h2>
+        </div>
+        <div id="shop-grid" class="product-grid"></div>
+        <div id="shop-pagination" style="display:flex;justify-content:center;gap:10px;margin-top:36px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/includes.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/product-card.js"></script>
+  <script src="js/shop.js"></script>
+</body>
+</html>

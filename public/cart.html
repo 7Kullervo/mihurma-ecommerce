@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart — Mihurma</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .cart-layout{ display:grid; grid-template-columns: 1.6fr 1fr; gap: 40px; padding: 40px 0 90px; align-items:start; }
+  .cart-line{ display:grid; grid-template-columns: 90px 1fr auto auto; gap: 18px; align-items:center; padding: 18px; background:var(--surface); border:1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; }
+  .cart-line img{ width:90px; height:90px; object-fit:cover; border-radius: 10px; }
+  .cart-line .name{ font-weight:600; margin-bottom:4px; }
+  .cart-line .unit-price{ color:var(--text-soft); font-size:.88rem; }
+  .cart-line .remove-btn{ background:none; border:none; color:var(--text-soft); cursor:pointer; transition:color var(--transition); }
+  .cart-line .remove-btn:hover{ color: var(--danger); }
+  .qty-stepper.small button{ width:32px; height:32px; }
+  .summary-card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 26px; position:sticky; top: 90px; }
+  .summary-row{ display:flex; justify-content:space-between; margin-bottom: 12px; color: var(--text-soft); }
+  .summary-row.total{ color: var(--text); font-weight:700; font-size:1.15rem; border-top:1px solid var(--border); padding-top:14px; margin-top: 6px; }
+  @media (max-width: 800px){ .cart-layout{ grid-template-columns:1fr; } .cart-line{ grid-template-columns: 70px 1fr; grid-template-areas: "img name" "img controls"; } }
+</style>
+</head>
+<body data-page="shop">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div class="section-title" style="text-align:left;margin:36px 0 10px;">
+      <h2 id="cart-page-title">Your Cart</h2>
+    </div>
+    <div id="cart-root" class="cart-layout"></div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/includes.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/cart.js"></script>
+</body>
+</html>

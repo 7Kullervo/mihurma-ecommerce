@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders — Mihurma Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <div id="admin-sidebar-slot"></div>
+    <main class="admin-main">
+      <div class="admin-topbar"><h1>Orders</h1></div>
+      <div class="help-banner">💡 Changing the status dropdown below updates the customer's tracking page instantly — they don't need to refresh.</div>
+      <div id="orders-root"></div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="js/admin-layout.js"></script>
+  <script>
+    const STATUSES = ['pending_payment','processing','shipped','out_for_delivery','delivered','cancelled'];
+    (async function () {
+      const user = await initAdminLayout('orders');
+      if (!user) return;
+
+      const root = document.getElementById('orders-root');
+      root.innerHTML = `<div class="skeleton" style="height:300px;"></div>`;
+      try {
+        const { orders } = await api('/admin/orders');
+        if (!orders.length) {
+          root.innerHTML = `<div class="empty-state"><h3>No orders yet</h3></div>`;
+          return;
+        }
+        root.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Paid</th><th>Date</th><th>Status</th></tr></thead>
+            <tbody>
+              ${orders.map(o => `<tr>
+                <td>#${o.id}</td>
+                <td>${o.customer_name}<br><span style="color:var(--text-soft);font-size:.8rem;">${o.customer_email}</span></td>
+                <td>$${Number(o.total).toFixed(2)}</td>
+                <td>${o.paid ? '✅' : '—'}</td>
+                <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                <td>
+                  <select class="status-select" data-id="${o.id}">
+                    ${STATUSES.map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s.replace(/_/g,' ')}</option>`).join('')}
+                  </select>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+
+        root.querySelectorAll('.status-select').forEach(sel => {
+          sel.addEventListener('change', async () => {
+            try {
+              await api(`/admin/orders/${sel.dataset.id}/status`, { method: 'PUT', body: { status: sel.value } });
+              toast(`Order #${sel.dataset.id} updated to "${sel.value.replace(/_/g,' ')}".`);
+            } catch (e) { toast(e.message, 'error'); }
+          });
+        });
+      } catch (e) { root.innerHTML = `<div class="empty-state"><h3>Couldn't load orders</h3><p>${e.message}</p></div>`; }
+    })();
+  </script>
+</body>
+</html>

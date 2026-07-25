@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — Mihurma</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="dashboard">
+  <div id="site-header"></div>
+
+  <main class="container">
+    <div class="dash-layout">
+      <aside class="dash-nav">
+        <div class="who">
+          <div class="avatar" id="dash-avatar">?</div>
+          <div>
+            <div id="dash-name" style="font-weight:700;">—</div>
+            <div id="dash-email" style="font-size:.8rem;color:var(--text-soft);">—</div>
+          </div>
+        </div>
+        <button class="tab active" data-tab="orders">📦 My Orders</button>
+        <button class="tab" data-tab="profile">👤 Profile</button>
+        <button class="tab" id="logout-btn">🚪 Log Out</button>
+      </aside>
+
+      <div>
+        <section id="tab-orders">
+          <h2 style="margin-bottom:20px;">My Orders</h2>
+          <div id="orders-root"></div>
+        </section>
+        <section id="tab-profile" style="display:none;">
+          <h2 style="margin-bottom:20px;">Profile</h2>
+          <div class="form-card" style="max-width:480px;">
+            <div class="field"><label>Full name</label><input id="profile-name"></div>
+            <div class="field"><label>Phone</label><input id="profile-phone"></div>
+            <div class="field"><label>Default address</label><textarea id="profile-address" rows="2"></textarea></div>
+            <button id="save-profile" class="btn btn-primary">Save Changes</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/includes.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

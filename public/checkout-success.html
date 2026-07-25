@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmed — Mihurma</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="shop">
+  <div id="site-header"></div>
+  <main class="container" style="padding: 70px 0 100px; max-width: 600px; text-align:center;">
+    <div style="width:78px;height:78px;border-radius:50%;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--brown-strong)" stroke-width="2.4"><path d="M20 7 9 18l-5-5"/></svg>
+    </div>
+    <h1 style="margin-bottom:14px;">Thank you — your order is confirmed!</h1>
+    <p style="color:var(--text-soft);margin-bottom:30px;">We've received your payment and your order is now being prepared. You'll get live updates as it moves through processing, shipping, and delivery.</p>
+    <div id="order-id-box" style="margin-bottom:30px;"></div>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <a href="dashboard.html" class="btn btn-primary">Track My Order</a>
+      <a href="shop.html" class="btn btn-outline">Continue Shopping</a>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/api.js"></script>
+  <script src="js/includes.js"></script>
+  <script src="js/layout.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('order');
+    if (orderId) {
+      document.getElementById('order-id-box').innerHTML =
+        `<span style="background:var(--bg-alt);padding:8px 18px;border-radius:999px;font-weight:600;">Order #${orderId}</span>`;
+    }
+  </script>
+</body>
+</html>

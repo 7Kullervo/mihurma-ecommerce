@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers — Mihurma Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <div id="admin-sidebar-slot"></div>
+    <main class="admin-main">
+      <div class="admin-topbar"><h1>Customers</h1></div>
+      <div class="help-banner">💡 Promote a customer to Admin only if you trust them with full store access — admins can edit products, orders, and other accounts.</div>
+      <div id="users-root"></div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="js/admin-layout.js"></script>
+  <script>
+    (async function () {
+      const me = await initAdminLayout('users');
+      if (!me) return;
+
+      const root = document.getElementById('users-root');
+      root.innerHTML = `<div class="skeleton" style="height:300px;"></div>`;
+      try {
+        const { users } = await api('/admin/users');
+        root.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+            <tbody>
+              ${users.map(u => `<tr>
+                <td>${u.name}</td>
+                <td>${u.email}</td>
+                <td><span class="pill ${u.role === 'admin' ? 'active' : ''}">${u.role}</span></td>
+                <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                <td>
+                  ${u.id === me.id ? '<span style="color:var(--text-soft);font-size:.8rem;">(you)</span>' : `
+                  <button class="btn btn-outline btn-sm role-btn" data-id="${u.id}" data-role="${u.role === 'admin' ? 'customer' : 'admin'}">
+                    Make ${u.role === 'admin' ? 'Customer' : 'Admin'}
+                  </button>`}
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+
+        root.querySelectorAll('.role-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            try {
+              await api(`/admin/users/${btn.dataset.id}/role`, { method: 'PUT', body: { role: btn.dataset.role } });
+              toast('Role updated.');
+              setTimeout(() => window.location.reload(), 500);
+            } catch (e) { toast(e.message, 'error'); }
+          });
+        });
+      } catch (e) { root.innerHTML = `<div class="empty-state"><h3>Couldn't load customers</h3><p>${e.message}</p></div>`; }
+    })();
+  </script>
+</body>
+</html>

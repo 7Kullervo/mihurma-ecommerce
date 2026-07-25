@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — Mihurma</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <div id="admin-sidebar-slot"></div>
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Dashboard</h1>
+      </div>
+      <div class="help-banner">
+        💡 Welcome! This page gives you a bird's-eye view of the store. Check the sidebar on the left anytime you need help with a specific section.
+      </div>
+      <div id="stats-root" class="stat-grid"></div>
+      <h2 style="margin-bottom:16px;font-size:1.2rem;">Recent Orders</h2>
+      <div id="recent-orders-root"></div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="js/admin-layout.js"></script>
+  <script>
+    (async function () {
+      const user = await initAdminLayout('dashboard');
+      if (!user) return;
+
+      const statsRoot = document.getElementById('stats-root');
+      const recentRoot = document.getElementById('recent-orders-root');
+      statsRoot.innerHTML = Array(4).fill('<div class="skeleton" style="height:90px;"></div>').join('');
+
+      try {
+        const s = await api('/admin/stats');
+        statsRoot.innerHTML = `
+          <div class="stat-card"><div class="label">Revenue</div><div class="value">$${Number(s.totalRevenue).toFixed(2)}</div></div>
+          <div class="stat-card"><div class="label">Paid Orders</div><div class="value">${s.totalOrders}</div></div>
+          <div class="stat-card"><div class="label">Products</div><div class="value">${s.totalProducts}</div></div>
+          <div class="stat-card"><div class="label">Customers</div><div class="value">${s.totalUsers}</div></div>
+        `;
+        if (s.lowStock > 0) {
+          statsRoot.insertAdjacentHTML('afterend', `<div class="help-banner" style="background:#F6DAD3;color:#7A2A18;">⚠️ ${s.lowStock} product${s.lowStock === 1 ? '' : 's'} ${s.lowStock === 1 ? 'is' : 'are'} low on stock (5 or fewer left). <a href="products.html" style="color:#7A2A18;text-decoration:underline;margin-left:6px;">Review products →</a></div>`);
+        }
+        recentRoot.innerHTML = s.recentOrders.length ? `
+          <table class="admin-table">
+            <thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+            <tbody>
+              ${s.recentOrders.map(o => `<tr>
+                <td>#${o.id}</td><td>${o.customer_name}</td>
+                <td><span class="pill ${o.status}">${o.status.replace(/_/g, ' ')}</span></td>
+                <td>$${Number(o.total).toFixed(2)}</td>
+                <td>${new Date(o.created_at).toLocaleDateString()}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>` : `<div class="empty-state"><h3>No orders yet</h3></div>`;
+      } catch (e) { statsRoot.innerHTML = `<div class="empty-state"><h3>Couldn't load stats</h3><p>${e.message}</p></div>`; }
+    })();
+  </script>
+</body>
+</html>

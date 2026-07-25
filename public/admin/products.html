@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products — Mihurma Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <div id="admin-sidebar-slot"></div>
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Products</h1>
+        <a href="add-product.html" class="btn btn-primary">+ Add Product</a>
+      </div>
+      <div id="products-root"></div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="js/admin-layout.js"></script>
+  <script>
+    (async function () {
+      const user = await initAdminLayout('products');
+      if (!user) return;
+
+      const root = document.getElementById('products-root');
+      root.innerHTML = `<div class="skeleton" style="height:300px;"></div>`;
+      try {
+        const { products } = await api('/admin/products');
+        if (!products.length) {
+          root.innerHTML = `<div class="empty-state"><h3>No products yet</h3><p>Click "Add Product" above to create your first listing.</p></div>`;
+          return;
+        }
+        root.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th></th><th>Title</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Featured</th><th></th></tr></thead>
+            <tbody>
+              ${products.map(p => `<tr>
+                <td><img class="thumb" src="${p.thumbnail || 'https://picsum.photos/seed/mihurma-placeholder/100/100'}"></td>
+                <td>${p.title}</td>
+                <td>${p.category_name || '—'}</td>
+                <td>$${Number(p.price).toFixed(2)}</td>
+                <td>${p.stock}</td>
+                <td><span class="pill ${p.status}">${p.status}</span></td>
+                <td>${p.is_featured ? '⭐' : '—'}</td>
+                <td>
+                  <a href="add-product.html?id=${p.id}" class="btn btn-outline btn-sm">Edit</a>
+                  <button class="btn btn-outline btn-sm delete-btn" data-id="${p.id}" style="color:var(--danger);border-color:var(--danger);">Delete</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+
+        root.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Delete this product permanently? This cannot be undone.')) return;
+            try {
+              await api(`/admin/products/${btn.dataset.id}`, { method: 'DELETE' });
+              btn.closest('tr').remove();
+              toast('Product deleted.');
+            } catch (e) { toast(e.message, 'error'); }
+          });
+        });
+      } catch (e) { root.innerHTML = `<div class="empty-state"><h3>Couldn't load products</h3><p>${e.message}</p></div>`; }
+    })();
+  </script>
+</body>
+</html>

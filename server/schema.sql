@@ -10,6 +10,7 @@ CREATE TABLE users (
   role ENUM('customer','admin') NOT NULL DEFAULT 'customer',
   phone VARCHAR(40) NULL,
   address TEXT NULL,
+  push_token VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -56,22 +57,31 @@ CREATE TABLE cart_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE couriers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  phone VARCHAR(40),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 CREATE TABLE orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
-  status ENUM('pending_payment','processing','shipped','out_for_delivery','delivered','cancelled') NOT NULL DEFAULT 'pending_payment',
+  status ENUM('pending_payment','preparing','prepared','on_the_way','arriving_today','delivered','cancelled') NOT NULL DEFAULT 'pending_payment',
   subtotal DECIMAL(10,2) NOT NULL,
   total DECIMAL(10,2) NOT NULL,
   shipping_name VARCHAR(190),
   shipping_address TEXT,
   shipping_phone VARCHAR(40),
+  courier_id INT NULL,
   payment_method VARCHAR(40) DEFAULT 'stripe',
   stripe_session_id VARCHAR(190) NULL,
   stripe_payment_intent VARCHAR(190) NULL,
   paid TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (courier_id) REFERENCES couriers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE order_items (

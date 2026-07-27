@@ -103,4 +103,14 @@ router.put('/me', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Called by the browser once it has permission + a Firebase Cloud Messaging token,
+// so the "push" notification channel has somewhere to send to. Safe to call even if
+// push notifications are never set up - it just stores a token that never gets used.
+router.post('/push-token', requireAuth, async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ error: 'Missing push token.' });
+  await pool.query('UPDATE users SET push_token = ? WHERE id = ?', [token, req.user.id]);
+  res.json({ ok: true });
+});
+
 module.exports = router;

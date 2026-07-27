@@ -4,18 +4,10 @@ const path = require('path');
 const pool = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const upload = require('../utils/upload');
+const { notifyOrderStatus, STATUS_LABELS } = require('../notifications');
 const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
-
-const STATUS_LABELS = {
-  pending_payment: 'Payment pending',
-  processing: 'Processing',
-  shipped: 'Shipped',
-  out_for_delivery: 'Out for delivery',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled'
-};
 
 function slugify(str) {
   return str.toLowerCase().trim()
@@ -164,8 +156,12 @@ router.post('/categories', async (req, res) => {
 // ---------- Orders ----------
 router.get('/orders', async (req, res) => {
   const { status } = req.query;
-  let sql = `SELECT o.id, o.status, o.total, o.paid, o.created_at, u.name AS customer_name, u.email AS customer_email
-             FROM orders o JOIN users u ON u.id = o.user_id`;
+  let sql = `SELECT o.id, o.status, o.total, o.paid, o.created_at, o.courier_id,
+                    u.name AS customer_name, u.email AS customer_email,
+                    c.name AS courier_name
+             FROM orders o
+             JOIN users u ON u.id = o.user_id
+             LEFT JOIN couriers c ON c.id = o.courier_id`;
   const params = [];
   if (status) { sql += ' WHERE o.status = ?'; params.push(status); }
   sql += ' ORDER BY o.created_at DESC';
@@ -178,7 +174,10 @@ router.put('/orders/:id/status', async (req, res) => {
   const { status, note } = req.body;
   if (!VALID_STATUSES.includes(status)) return res.status(400).json({ error: 'Invalid status.' });
 
-  const [[order]] = await pool.query('SELECT * FROM orders WHERE id = ?', [req.params.id]);
+  const [[order]] = await pool.query(
+    `SELECT o.*, c.name AS courier_name FROM orders o LEFT JOIN couriers c ON c.id = o.courier_id WHERE o.id = ?`,
+    [req.params.id]
+  );
   if (!order) return res.status(404).json({ error: 'Order not found.' });
 
   await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
@@ -190,6 +189,37 @@ router.put('/orders/:id/status', async (req, res) => {
   io?.to(`order_${req.params.id}`).emit('order:update', { order_id: Number(req.params.id), status, label: STATUS_LABELS[status] });
   io?.to(`user_${order.user_id}`).emit('order:update', { order_id: Number(req.params.id), status, label: STATUS_LABELS[status] });
 
+  // Fire-and-forget: notify the customer through every enabled channel (email/SMS/
+  // WhatsApp/push). This never blocks or fails the status update itself - see
+  // notifications/index.js for how each channel isolates its own errors.
+  const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [order.user_id]);
+  if (customer) notifyOrderStatus(order, customer, status, order.courier_name).catch(() => {});
+
+  res.json({ ok: true });
+});
+
+// ---------- Couriers ----------
+router.get('/couriers', async (req, res) => {
+  const [rows] = await pool.query('SELECT * FROM couriers ORDER BY name');
+  res.json({ couriers: rows });
+});
+
+router.post('/couriers', async (req, res) => {
+  const { name, phone } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Courier name is required.' });
+  const [result] = await pool.query('INSERT INTO couriers (name, phone) VALUES (?, ?)', [name.trim(), phone || null]);
+  res.status(201).json({ ok: true, courier_id: result.insertId });
+});
+
+router.delete('/couriers/:id', async (req, res) => {
+  await pool.query('DELETE FROM couriers WHERE id = ?', [req.params.id]);
+  res.json({ ok: true });
+});
+
+// Assign (or unassign, with courier_id: null) a courier to an order.
+router.put('/orders/:id/courier', async (req, res) => {
+  const { courier_id } = req.body;
+  await pool.query('UPDATE orders SET courier_id = ? WHERE id = ?', [courier_id || null, req.params.id]);
   res.json({ ok: true });
 });
 

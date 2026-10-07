@@ -1,25 +1,14 @@
 const express = require('express');
-const Stripe = require('stripe');
 const pool = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { STATUS_LABELS, notifyOrderStatus } = require('../notifications');
 const router = express.Router();
 
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-
-const STATUS_LABELS = {
-  pending_payment: 'Payment pending',
-  processing: 'Processing',
-  shipped: 'Shipped',
-  out_for_delivery: 'Out for delivery',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled'
-};
-
-// Create an order from the user's cart (or a single "buy now" item) and start a Stripe Checkout session.
+// Create an order from the user's cart (or a single "buy now" item). Payment is via
+// JazzCash QR - the customer scans the code shown on the next page and pays in the
+// JazzCash app directly; there's no gateway callback, so the order simply waits in
+// "pending_payment" until an admin manually confirms it (see admin.js's /mark-paid).
 router.post('/checkout', requireAuth, async (req, res) => {
-  if (!stripe) {
-    return res.status(503).json({ error: 'Payments are not configured yet. Add your Stripe keys in server/.env.' });
-  }
   const conn = await pool.getConnection();
   try {
     const { shipping_name, shipping_address, shipping_phone, buy_now } = req.body;
@@ -57,8 +46,8 @@ router.post('/checkout', requireAuth, async (req, res) => {
 
     await conn.beginTransaction();
     const [orderResult] = await conn.query(
-      `INSERT INTO orders (user_id, status, subtotal, total, shipping_name, shipping_address, shipping_phone)
-       VALUES (?, 'pending_payment', ?, ?, ?, ?, ?)`,
+      `INSERT INTO orders (user_id, status, subtotal, total, shipping_name, shipping_address, shipping_phone, payment_method)
+       VALUES (?, 'pending_payment', ?, ?, ?, ?, ?, 'jazzcash_qr')`,
       [req.user.id, subtotal, total, shipping_name, shipping_address, shipping_phone]
     );
     const orderId = orderResult.insertId;
@@ -74,29 +63,18 @@ router.post('/checkout', requireAuth, async (req, res) => {
       );
     }
     await conn.query('INSERT INTO order_status_history (order_id, status, note) VALUES (?, ?, ?)', [
-      orderId, 'pending_payment', 'Order created, awaiting payment.'
+      orderId, 'pending_payment', 'Order placed, awaiting JazzCash payment confirmation.'
     ]);
     await conn.commit();
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      customer_email: req.user.email,
-      line_items: items.map(it => ({
-        price_data: {
-          currency: 'usd',
-          product_data: { name: it.title },
-          unit_amount: Math.round(Number(it.price) * 100)
-        },
-        quantity: it.quantity
-      })),
-      success_url: `${process.env.CLIENT_URL}/checkout-success.html?order=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}/cart.html?cancelled=1`,
-      metadata: { order_id: String(orderId), user_id: String(req.user.id) }
-    });
+    // Let the customer know right away how to pay - this fires in the background and
+    // never blocks the response, same isolation as every other notification call.
+    // (req.user is just the JWT payload and doesn't carry phone/push_token, so the
+    // full row is fetched here to make sure SMS/WhatsApp/push can actually reach them.)
+    const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [req.user.id]);
+    if (customer) notifyOrderStatus({ id: orderId }, customer, 'pending_payment').catch(() => {});
 
-    await pool.query('UPDATE orders SET stripe_session_id = ? WHERE id = ?', [session.id, orderId]);
-    res.json({ url: session.url, order_id: orderId });
+    res.json({ order_id: orderId, total });
   } catch (err) {
     await conn.rollback();
     console.error(err);
@@ -105,56 +83,6 @@ router.post('/checkout', requireAuth, async (req, res) => {
     conn.release();
   }
 });
-
-// Stripe webhook - marks order paid, decrements stock, clears cart, emits real-time update.
-// NOTE: this handler is mounted directly in index.js (with raw body parsing) BEFORE express.json(),
-// so it never runs through this router - it's exported separately as `webhookHandler` below.
-async function webhookHandler(req, res) {
-  if (!stripe) return res.status(503).end();
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const orderId = session.metadata?.order_id;
-    const userId = session.metadata?.user_id;
-    if (orderId) {
-      const conn = await pool.getConnection();
-      try {
-        await conn.beginTransaction();
-        await conn.query(
-          'UPDATE orders SET paid = 1, status = "processing", stripe_payment_intent = ? WHERE id = ?',
-          [session.payment_intent, orderId]
-        );
-        await conn.query('INSERT INTO order_status_history (order_id, status, note) VALUES (?, "processing", "Payment received. Order is being prepared.")', [orderId]);
-
-        const [items] = await conn.query('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
-        for (const it of items) {
-          if (it.product_id) {
-            await conn.query('UPDATE products SET stock = GREATEST(stock - ?, 0) WHERE id = ?', [it.quantity, it.product_id]);
-          }
-        }
-        if (userId) await conn.query('DELETE FROM cart_items WHERE user_id = ?', [userId]);
-        await conn.commit();
-
-        const io = req.app.get('io');
-        io?.to(`order_${orderId}`).emit('order:update', { order_id: Number(orderId), status: 'processing', label: STATUS_LABELS.processing });
-        if (userId) io?.to(`user_${userId}`).emit('order:paid', { order_id: Number(orderId) });
-      } catch (err) {
-        await conn.rollback();
-        console.error(err);
-      } finally {
-        conn.release();
-      }
-    }
-  }
-  res.json({ received: true });
-}
 
 router.get('/mine', requireAuth, async (req, res) => {
   const [orders] = await pool.query(
@@ -165,7 +93,11 @@ router.get('/mine', requireAuth, async (req, res) => {
 });
 
 router.get('/:id', requireAuth, async (req, res) => {
-  const [[order]] = await pool.query('SELECT * FROM orders WHERE id = ?', [req.params.id]);
+  const [[order]] = await pool.query(
+    `SELECT o.*, c.name AS courier_name, c.phone AS courier_phone
+     FROM orders o LEFT JOIN couriers c ON c.id = o.courier_id WHERE o.id = ?`,
+    [req.params.id]
+  );
   if (!order) return res.status(404).json({ error: 'Order not found.' });
   if (order.user_id !== req.user.id && req.user.role !== 'admin') {
     return res.status(403).json({ error: 'You do not have access to this order.' });
@@ -176,4 +108,3 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 module.exports = router;
-module.exports.webhookHandler = webhookHandler;

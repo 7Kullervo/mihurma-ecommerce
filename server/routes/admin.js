@@ -4,7 +4,8 @@ const path = require('path');
 const pool = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const upload = require('../utils/upload');
-const { notifyOrderStatus, STATUS_LABELS } = require('../notifications');
+const { notifyOrderStatus, notifyCustomMessage, STATUS_LABELS } = require('../notifications');
+const { confirmOrder, announceOrderConfirmed } = require('../payments/fulfillOrder');
 const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
@@ -156,7 +157,7 @@ router.post('/categories', async (req, res) => {
 // ---------- Orders ----------
 router.get('/orders', async (req, res) => {
   const { status } = req.query;
-  let sql = `SELECT o.id, o.status, o.total, o.paid, o.created_at, o.courier_id,
+  let sql = `SELECT o.id, o.status, o.total, o.paid, o.created_at, o.courier_id, o.tracking_number,
                     u.name AS customer_name, u.email AS customer_email,
                     c.name AS courier_name
              FROM orders o
@@ -194,6 +195,49 @@ router.put('/orders/:id/status', async (req, res) => {
   // notifications/index.js for how each channel isolates its own errors.
   const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [order.user_id]);
   if (customer) notifyOrderStatus(order, customer, status, order.courier_name).catch(() => {});
+
+  res.json({ ok: true });
+});
+
+// Manual payment confirmation - used for the JazzCash QR flow, where there's no
+// automatic gateway callback. The admin checks their own JazzCash account, sees the
+// payment landed, and clicks this to confirm it on the order and notify the customer.
+router.put('/orders/:id/mark-paid', async (req, res) => {
+  const [[order]] = await pool.query('SELECT id, status FROM orders WHERE id = ?', [req.params.id]);
+  if (!order) return res.status(404).json({ error: 'Order not found.' });
+  if (order.status !== 'pending_payment') {
+    return res.status(400).json({ error: 'This order has already been confirmed.' });
+  }
+
+  const { userId } = await confirmOrder(req.params.id, { paid: true });
+  await announceOrderConfirmed(req, req.params.id, userId);
+  res.json({ ok: true });
+});
+
+// Attach (or update) a courier/postal tracking number and notify the customer with it.
+router.put('/orders/:id/tracking', async (req, res) => {
+  const { tracking_number } = req.body;
+  if (!tracking_number || !tracking_number.trim()) {
+    return res.status(400).json({ error: 'Please enter a tracking number.' });
+  }
+  const trackingNumber = tracking_number.trim();
+
+  const [[order]] = await pool.query('SELECT id, user_id FROM orders WHERE id = ?', [req.params.id]);
+  if (!order) return res.status(404).json({ error: 'Order not found.' });
+
+  await pool.query('UPDATE orders SET tracking_number = ? WHERE id = ?', [trackingNumber, req.params.id]);
+  await pool.query('INSERT INTO order_status_history (order_id, status, note) VALUES (?, ?, ?)', [
+    req.params.id, 'tracking_added', `Tracking number added: ${trackingNumber}`
+  ]);
+
+  const io = req.app.get('io');
+  io?.to(`order_${req.params.id}`).emit('order:tracking', { order_id: Number(req.params.id), tracking_number: trackingNumber });
+
+  const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [order.user_id]);
+  if (customer) {
+    const message = `Your order #${order.id} has shipped! Track it with number ${trackingNumber} at https://ep.gov.pk/`;
+    notifyCustomMessage(order, customer, message, 'Tracking Number Added').catch(() => {});
+  }
 
   res.json({ ok: true });
 });

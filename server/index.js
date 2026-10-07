@@ -23,12 +23,6 @@ app.set('io', io);
 app.use(helmet({ contentSecurityPolicy: false })); // CSP left off for simplicity with inline demo assets; tighten before production
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(cookieParser());
-
-// Stripe webhook needs the RAW request body to verify the signature, so it must be
-// registered before express.json() and must fully handle+respond here (it never
-// reaches the JSON-parsed router below).
-app.post('/api/orders/webhook', express.raw({ type: 'application/json' }), orderRoutes.webhookHandler);
-
 app.use(express.json({ limit: '2mb' }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

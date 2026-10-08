@@ -78,6 +78,7 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`Mihurma server running at http://localhost:${PORT}`);
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Mihurma server running on port ${PORT}`);
 });

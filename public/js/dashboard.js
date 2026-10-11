@@ -1,7 +1,8 @@
-const STATUS_STEPS = ['processing', 'shipped', 'out_for_delivery', 'delivered'];
+const STATUS_STEPS = ['preparing', 'prepared', 'on_the_way', 'arriving_today', 'delivered'];
 const STATUS_LABELS = {
-  pending_payment: 'Payment pending', processing: 'Processing', shipped: 'Shipped',
-  out_for_delivery: 'Out for delivery', delivered: 'Delivered', cancelled: 'Cancelled'
+  pending_payment: 'Payment Pending', preparing: 'Product Being Prepared', prepared: 'Product Prepared',
+  on_the_way: 'Product On The Way', arriving_today: 'Product Might Be Delivered Today',
+  delivered: 'Delivered', cancelled: 'Cancelled'
 };
 
 (async function () {
@@ -74,18 +75,41 @@ const STATUS_LABELS = {
   }
 
   // ---------- Real-time updates ----------
-  const socket = io({ withCredentials: true });
-  socket.on('connect', () => {
-    socket.emit('join:user');
-    orders.forEach(o => socket.emit('join:order', o.id));
-  });
-  socket.on('order:update', ({ order_id, status, label }) => {
-    updateOrderCardStatus(order_id, status, label);
-    toast(`Order #${order_id} is now: ${label}`);
-  });
-  socket.on('order:paid', ({ order_id }) => {
-    toast(`Payment confirmed for order #${order_id}.`);
-  });
+  if (typeof io !== 'undefined') {
+    const socket = io({ withCredentials: true });
+    socket.on('connect', () => {
+      socket.emit('join:user');
+      orders.forEach(o => socket.emit('join:order', o.id));
+    });
+    socket.on('order:update', ({ order_id, status, label }) => {
+      updateOrderCardStatus(order_id, status, label);
+      toast(`Order #${order_id} is now: ${label}`);
+    });
+    socket.on('order:paid', ({ order_id }) => {
+      toast(`Payment confirmed for order #${order_id}.`);
+    });
+    socket.on('order:tracking', ({ order_id, tracking_number }) => {
+      showTrackingNumber(order_id, tracking_number);
+      toast(`Tracking number added to order #${order_id}.`);
+    });
+  } else {
+    // No websockets (e.g. hosted on Vercel): poll every 8s for status changes.
+    const seen = {};
+    orders.forEach(o => { seen[o.id] = o.status; });
+    setInterval(async () => {
+      for (const o of orders) {
+        try {
+          const { order, items, history } = await api(`/orders/${o.id}`);
+          if (order.status !== seen[o.id]) {
+            seen[o.id] = order.status;
+            fillOrderCard(order, items, history);
+            updateOrderCardStatus(o.id, order.status, order.status_label || order.status);
+            toast(`Order #${o.id} is now: ${order.status_label || order.status}`);
+          }
+        } catch (e) { /* retry next tick */ }
+      }
+    }, 8000);
+  }
 
   function orderCardSkeleton(o) {
     return `<div class="order-card" id="order-${o.id}">
@@ -116,6 +140,8 @@ const STATUS_LABELS = {
         ${items.map(it => `<img src="${it.image_path || 'https://picsum.photos/seed/mihurma-placeholder/100/100'}" title="${it.title} × ${it.quantity}">`).join('')}
       </div>
       <div style="margin-top:10px;color:var(--text-soft);font-size:.88rem;">${items.length} item${items.length === 1 ? '' : 's'} · Total $${Number(order.total).toFixed(2)}</div>
+      ${order.courier_name ? `<div style="margin-top:6px;color:var(--text-soft);font-size:.85rem;">🚴 Courier: <strong style="color:var(--text);">${order.courier_name}</strong>${order.courier_phone ? ` · ${order.courier_phone}` : ''}</div>` : ''}
+      <div id="tracking-box-${order.id}">${trackingNumberHTML(order.tracking_number)}</div>
       ${cancelled ? '' : `<div class="track-timeline">
         ${STATUS_STEPS.map(step => `
           <div class="track-step ${STATUS_STEPS.indexOf(order.status) >= STATUS_STEPS.indexOf(step) ? 'done' : ''}" data-step="${step}">
@@ -123,6 +149,19 @@ const STATUS_LABELS = {
           </div>`).join('')}
       </div>`}
     `;
+  }
+
+  function trackingNumberHTML(trackingNumber) {
+    if (!trackingNumber) return '';
+    return `<div style="margin-top:6px;color:var(--text-soft);font-size:.85rem;">
+      📦 Tracking #: <strong style="color:var(--text);">${trackingNumber}</strong>
+      · <a href="https://ep.gov.pk/" target="_blank" rel="noopener" style="color:var(--gold-strong);font-weight:600;">Track at ep.gov.pk →</a>
+    </div>`;
+  }
+
+  function showTrackingNumber(orderId, trackingNumber) {
+    const box = document.getElementById(`tracking-box-${orderId}`);
+    if (box) box.innerHTML = trackingNumberHTML(trackingNumber);
   }
 
   function updateOrderCardStatus(orderId, status, label) {

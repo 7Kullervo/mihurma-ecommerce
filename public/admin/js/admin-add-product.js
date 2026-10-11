@@ -147,7 +147,24 @@
     fd.append('category_id', categorySelect.value);
     fd.append('is_featured', document.getElementById('f-featured').checked ? '1' : '');
     if (isEdit) fd.append('status', document.getElementById('f-status').value);
-    if (includeFiles) newFiles.forEach(f => fd.append('images', f));
+  }
+
+  // Shrink photos in the browser (max 1000px, JPEG) so uploads stay small enough for Vercel's 4.5MB limit.
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const scale = Math.min(1, 1000 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => resolve(b ? new File([b], 'photo.jpg', { type: 'image/jpeg' }) : file), 'image/jpeg', 0.8);
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
   }
 
   document.getElementById('save-btn').addEventListener('click', async () => {
@@ -166,6 +183,7 @@
     try {
       const fd = new FormData();
       appendCurrentFields(fd, true);
+      for (const f of newFiles) fd.append('images', await compressImage(f));
       if (!isEdit) {
         fd.append('primary_index', primaryIsExisting === null ? primaryNewIndex : 0);
       } else if (primaryIsExisting !== null) {

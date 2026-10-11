@@ -72,7 +72,7 @@ router.post('/checkout', requireAuth, async (req, res) => {
     // (req.user is just the JWT payload and doesn't carry phone/push_token, so the
     // full row is fetched here to make sure SMS/WhatsApp/push can actually reach them.)
     const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [req.user.id]);
-    if (customer) notifyOrderStatus({ id: orderId }, customer, 'pending_payment').catch(() => {});
+    if (customer) await notifyOrderStatus({ id: orderId }, customer, 'pending_payment').catch(() => {});
 
     res.json({ order_id: orderId, total });
   } catch (err) {

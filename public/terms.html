@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms & Conditions — Mihurma</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="terms">
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="legal-page">
+      <p class="eyebrow">Legal</p>
+      <h1>Terms & Conditions</h1>
+      <p class="updated">Last updated: <span id="today"></span></p>
+
+      <div class="legal-note">
+        📝 This is a general-purpose template, not legal advice. Have a lawyer review and adapt this —
+        especially the governing-law and liability sections — before relying on it for a real store.
+      </div>
+
+      <p>By accessing or using Mihurma ("the Site"), you agree to the following terms. If you don't agree,
+      please don't use the Site.</p>
+
+      <h2>1. Using the Site</h2>
+      <ul>
+        <li>You must be able to form a legally binding contract to make a purchase.</li>
+        <li>You agree to provide accurate information when creating an account or placing an order.</li>
+        <li>You're responsible for keeping your account password confidential.</li>
+      </ul>
+
+      <h2>2. Products & Pricing</h2>
+      <p>We try to display accurate prices, descriptions, and stock levels, but errors can happen. If we
+      discover a pricing or listing error after you've ordered, we'll contact you before charging or shipping
+      anything, and you may cancel for a full refund.</p>
+
+      <h2>3. Orders & Payment</h2>
+      <p>All payments are processed securely through Stripe. An order is confirmed once payment is
+      successfully processed. We reserve the right to refuse or cancel any order, including for suspected
+      fraud, pricing errors, or stock unavailability.</p>
+
+      <h2>4. Shipping & Returns</h2>
+      <p>Shipping timeframes are estimates, not guarantees. See our <a href="return-policy.html">Return Policy</a>
+      for details on returns, exchanges, and refunds.</p>
+
+      <h2>5. Account Termination</h2>
+      <p>We may suspend or terminate accounts that violate these terms, attempt to abuse the platform, or
+      engage in fraudulent activity.</p>
+
+      <h2>6. Intellectual Property</h2>
+      <p>All content on this Site — text, graphics, logos, and design — belongs to Mihurma or its licensors
+      and may not be copied or reused without permission.</p>
+
+      <h2>7. Limitation of Liability</h2>
+      <p>To the fullest extent permitted by law, Mihurma is not liable for indirect, incidental, or
+      consequential damages arising from your use of the Site or products purchased through it.</p>
+
+      <h2>8. Changes to These Terms</h2>
+      <p>We may update these terms from time to time. Continued use of the Site after changes means you
+      accept the updated terms.</p>
+
+      <h2>9. Contact Us</h2>
+      <p>Questions? Reach us at <a href="mailto:hello@mihurma.com">hello@mihurma.com</a>.</p>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/api.js"></script>
+  <script src="js/includes.js"></script>
+  <script src="js/layout.js"></script>
+  <script>document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });</script>
+</body>
+</html>

@@ -1,33 +1,26 @@
 const multer = require('multer');
-const path = require('path');
 const crypto = require('crypto');
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads', 'products'));
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const safeExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
-    const uniqueName = crypto.randomBytes(16).toString('hex') + safeExt;
-    cb(null, uniqueName);
-  }
+// Memory storage: files go straight into the database (Vercel has no persistent disk).
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) =>
+    ALLOWED_TYPES.includes(file.mimetype) ? cb(null, true) : cb(new Error('Only JPG, PNG, WEBP or GIF images are allowed.')),
+  limits: { fileSize: 4 * 1024 * 1024, files: 8 }
 });
 
-function fileFilter(req, file, cb) {
-  if (ALLOWED_TYPES.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only JPG, PNG, WEBP or GIF images are allowed.'));
-  }
+// Insert one uploaded file into product_images; returns the public path.
+async function saveImage(conn, productId, file, isPrimary, sortOrder) {
+  const key = crypto.randomBytes(16).toString('hex');
+  const imagePath = `/api/images/${key}`;
+  await conn.query(
+    'INSERT INTO product_images (product_id, image_path, is_primary, sort_order, mime, data) VALUES (?, ?, ?, ?, ?, ?)',
+    [productId, imagePath, isPrimary ? 1 : 0, sortOrder, file.mimetype, file.buffer]
+  );
+  return imagePath;
 }
 
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024, files: 8 } // 5MB per file, up to 8 images
-});
-
 module.exports = upload;
+module.exports.saveImage = saveImage;

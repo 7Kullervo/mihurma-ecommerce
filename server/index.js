@@ -6,7 +6,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
@@ -16,15 +15,22 @@ const reviewRoutes = require('./routes/reviews');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
+app.set('trust proxy', 1); // behind Vercel's proxy: needed for rate-limit + secure cookies
+const IS_SERVERLESS = !!process.env.VERCEL;
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.CLIENT_URL, credentials: true } });
+let io = null;
+if (!IS_SERVERLESS) {
+  const { Server } = require('socket.io'); // real-time only when running as a normal server
+  io = new Server(server, { cors: { origin: process.env.CLIENT_URL, credentials: true } });
+}
 app.set('io', io);
 
 app.use(helmet({ contentSecurityPolicy: false })); // CSP left off for simplicity with inline demo assets; tighten before production
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors({ origin: process.env.CLIENT_URL || true, credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: '2mb' }));
 
+app.use('/api/images', require('./routes/images'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -47,7 +53,7 @@ function parseCookies(header = '') {
   }));
 }
 
-io.use((socket, next) => {
+if (io) io.use((socket, next) => {
   try {
     const cookies = parseCookies(socket.handshake.headers.cookie || '');
     if (cookies.token) socket.user = jwt.verify(cookies.token, process.env.JWT_SECRET);
@@ -59,7 +65,7 @@ io.use((socket, next) => {
 
 const pool = require('./db');
 
-io.on('connection', (socket) => {
+if (io) io.on('connection', (socket) => {
   socket.on('join:order', async (orderId) => {
     if (!socket.user || !orderId) return;
     try {
@@ -77,8 +83,11 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 4000;
+if (!IS_SERVERLESS) {
+  const PORT = process.env.PORT || 4000;
+  server.listen(PORT, () => {
+    console.log(`Mihurma server running at http://localhost:${PORT}`);
+  });
+}
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Mihurma server running on port ${PORT}`);
-});
+module.exports = app;

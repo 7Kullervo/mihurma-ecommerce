@@ -106,8 +106,8 @@
         <div class="field"><label>Full name</label><input id="ship-name" placeholder="Jane Doe"></div>
         <div class="field"><label>Shipping address</label><textarea id="ship-address" rows="2" placeholder="Street, city, postal code, country"></textarea></div>
         <div class="field"><label>Phone number</label><input id="ship-phone" placeholder="+1 555 000 0000"></div>
-        <button id="checkout-btn" class="btn btn-primary btn-block">Proceed to Payment</button>
-        <p class="field-hint" style="text-align:center;margin-top:10px;">🔒 Payments securely processed by Stripe.</p>
+        <button id="checkout-btn" class="btn btn-primary btn-block">Place Order</button>
+        <p class="field-hint" style="text-align:center;margin-top:10px;">💳 Pay via JazzCash QR on the next page.</p>
       </div>
     </div>`;
   }
@@ -150,17 +150,17 @@
       }
       const btn = document.getElementById('checkout-btn');
       btn.disabled = true;
-      btn.textContent = 'Redirecting to payment…';
+      btn.textContent = 'Placing order…';
       try {
         const body = { shipping_name, shipping_address, shipping_phone };
         if (buyNow) body.buy_now = { product_id: buyNowItem.product_id, quantity: buyNowItem.quantity };
         const data = await api('/orders/checkout', { method: 'POST', body });
         if (buyNow) sessionStorage.removeItem('mihurma-buy-now');
-        window.location.href = data.url;
+        window.location.href = `payment-pending.html?order=${data.order_id}`;
       } catch (e) {
         toast(e.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Proceed to Payment';
+        btn.textContent = 'Place Order';
       }
     });
   }

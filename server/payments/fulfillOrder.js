@@ -71,7 +71,7 @@ async function announceOrderConfirmed(req, orderId, userId) {
   if (userId) {
     const [[order]] = await pool.query('SELECT id FROM orders WHERE id = ?', [orderId]);
     const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [userId]);
-    if (order && customer) notifyOrderStatus(order, customer, 'preparing').catch(() => {});
+    if (order && customer) await notifyOrderStatus(order, customer, 'preparing').catch(() => {});
   }
 }
 

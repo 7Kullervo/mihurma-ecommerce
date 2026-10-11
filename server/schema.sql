@@ -43,6 +43,8 @@ CREATE TABLE product_images (
   image_path VARCHAR(255) NOT NULL,
   is_primary TINYINT(1) NOT NULL DEFAULT 0,
   sort_order INT NOT NULL DEFAULT 0,
+  mime VARCHAR(50) NULL,
+  data MEDIUMBLOB NULL,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 

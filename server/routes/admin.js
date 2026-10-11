@@ -43,7 +43,7 @@ router.get('/products', async (req, res) => {
 router.get('/products/:id', async (req, res) => {
   const [[product]] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!product) return res.status(404).json({ error: 'Product not found.' });
-  const [images] = await pool.query('SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, sort_order ASC', [product.id]);
+  const [images] = await pool.query('SELECT id, product_id, image_path, is_primary, sort_order FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, sort_order ASC', [product.id]);
   product.images = images;
   res.json({ product });
 });
@@ -67,10 +67,7 @@ router.post('/products', upload.array('images', 8), async (req, res) => {
     const files = req.files || [];
     const primaryIdx = parseInt(primary_index) || 0;
     for (let i = 0; i < files.length; i++) {
-      await conn.query(
-        'INSERT INTO product_images (product_id, image_path, is_primary, sort_order) VALUES (?, ?, ?, ?)',
-        [productId, `/uploads/products/${files[i].filename}`, i === primaryIdx ? 1 : 0, i]
-      );
+      await upload.saveImage(conn, productId, files[i], i === primaryIdx, i);
     }
     await conn.commit();
     res.status(201).json({ ok: true, product_id: productId });
@@ -98,10 +95,7 @@ router.put('/products/:id', upload.array('images', 8), async (req, res) => {
     const files = req.files || [];
     const [[maxSort]] = await conn.query('SELECT COALESCE(MAX(sort_order),-1) AS m FROM product_images WHERE product_id = ?', [req.params.id]);
     for (let i = 0; i < files.length; i++) {
-      await conn.query(
-        'INSERT INTO product_images (product_id, image_path, is_primary, sort_order) VALUES (?, ?, 0, ?)',
-        [req.params.id, `/uploads/products/${files[i].filename}`, maxSort.m + 1 + i]
-      );
+      await upload.saveImage(conn, req.params.id, files[i], false, maxSort.m + 1 + i);
     }
 
     // Update which image is primary/thumbnail
@@ -122,21 +116,13 @@ router.put('/products/:id', upload.array('images', 8), async (req, res) => {
 });
 
 router.delete('/products/:id/images/:imageId', async (req, res) => {
-  const [[img]] = await pool.query('SELECT * FROM product_images WHERE id = ? AND product_id = ?', [req.params.imageId, req.params.id]);
-  if (img) {
-    const filePath = path.join(__dirname, '..', img.image_path.replace('/uploads', 'uploads'));
-    fs.unlink(filePath, () => {});
+  {
     await pool.query('DELETE FROM product_images WHERE id = ?', [req.params.imageId]);
   }
   res.json({ ok: true });
 });
 
 router.delete('/products/:id', async (req, res) => {
-  const [images] = await pool.query('SELECT * FROM product_images WHERE product_id = ?', [req.params.id]);
-  images.forEach(img => {
-    const filePath = path.join(__dirname, '..', img.image_path.replace('/uploads', 'uploads'));
-    fs.unlink(filePath, () => {});
-  });
   await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
   res.json({ ok: true });
 });
@@ -194,7 +180,7 @@ router.put('/orders/:id/status', async (req, res) => {
   // WhatsApp/push). This never blocks or fails the status update itself - see
   // notifications/index.js for how each channel isolates its own errors.
   const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [order.user_id]);
-  if (customer) notifyOrderStatus(order, customer, status, order.courier_name).catch(() => {});
+  if (customer) await notifyOrderStatus(order, customer, status, order.courier_name).catch(() => {});
 
   res.json({ ok: true });
 });
@@ -236,7 +222,7 @@ router.put('/orders/:id/tracking', async (req, res) => {
   const [[customer]] = await pool.query('SELECT id, name, email, phone, push_token FROM users WHERE id = ?', [order.user_id]);
   if (customer) {
     const message = `Your order #${order.id} has shipped! Track it with number ${trackingNumber} at https://ep.gov.pk/`;
-    notifyCustomMessage(order, customer, message, 'Tracking Number Added').catch(() => {});
+    await notifyCustomMessage(order, customer, message, 'Tracking Number Added').catch(() => {});
   }
 
   res.json({ ok: true });

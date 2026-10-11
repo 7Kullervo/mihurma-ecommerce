@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie Policy — Mihurma</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="cookies">
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="legal-page">
+      <p class="eyebrow">Legal</p>
+      <h1>Cookie Policy</h1>
+      <p class="updated">Last updated: <span id="today"></span></p>
+
+      <div class="legal-note">
+        📝 This is a general-purpose template describing the cookies this codebase actually uses today.
+        If you add analytics, ads, or other tracking tools later, update this page (and consider adding a
+        cookie-consent banner) — have a lawyer review for GDPR/ePrivacy compliance if you serve EU visitors.
+      </div>
+
+      <h2>1. What Are Cookies?</h2>
+      <p>Cookies are small text files stored on your device that help websites function and remember
+      information about your visit.</p>
+
+      <h2>2. Cookies We Use</h2>
+      <ul>
+        <li><strong>Session/login cookie (essential):</strong> keeps you logged in securely as you browse. Without this, you couldn't stay signed in to view your cart or orders. This cookie can't be turned off without logging out.</li>
+      </ul>
+      <p>We also use your browser's local storage (not a cookie, but similar) to remember your light/dark
+      theme preference — this stays only on your device and is never sent to our server.</p>
+
+      <h2>3. Third-Party Cookies</h2>
+      <p>When you check out, <strong>Stripe</strong> (our payment processor) may set its own cookies on the
+      payment page to prevent fraud and process your transaction securely. These are governed by
+      <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's own privacy policy</a>,
+      not ours.</p>
+
+      <h2>4. Cookies We Don't Currently Use</h2>
+      <p>This site does not currently use advertising cookies, third-party analytics/tracking cookies, or
+      sell data to advertisers.</p>
+
+      <h2>5. Managing Cookies</h2>
+      <p>Most browsers let you block or delete cookies through their settings. Since we only use one
+      essential cookie for login, blocking it will simply prevent you from staying signed in.</p>
+
+      <h2>6. Questions</h2>
+      <p>Reach us at <a href="mailto:hello@mihurma.com">hello@mihurma.com</a>.</p>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/api.js"></script>
+  <script src="js/includes.js"></script>
+  <script src="js/layout.js"></script>
+  <script>document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });</script>
+</body>
+</html>

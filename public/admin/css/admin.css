@@ -1,4 +1,4 @@
-
+@import url('../css/style.css');
 
 .admin-shell{ display:grid; grid-template-columns: 270px 1fr; min-height:100vh; }
 .admin-sidebar{ background: var(--brown-strong); color: var(--gold-soft); padding: 26px 18px; position:sticky; top:0; height:100vh; overflow-y:auto; }
@@ -38,3 +38,17 @@
 .help-banner{ background: var(--gold-soft); color: var(--brown-strong); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 26px; font-size: .9rem; display:flex; gap:12px; align-items:flex-start; }
 .two-col-form{ display:grid; grid-template-columns: 1fr 1fr; gap: 26px; }
 @media (max-width: 900px){ .admin-shell{ grid-template-columns: 1fr; } .admin-sidebar{ position:static; height:auto; } .two-col-form{ grid-template-columns:1fr; } .stat-grid{ grid-template-columns: repeat(2,1fr); } }
+
+/* ---------- Order status buttons & courier assignment ---------- */
+.status-btn-row{ display:flex; gap:6px; flex-wrap:wrap; max-width:340px; }
+.status-btn{ padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg); color:var(--text-soft); font-size:.74rem; font-weight:700; cursor:pointer; transition: all var(--transition); white-space:nowrap; }
+.status-btn:hover{ border-color:var(--gold); color:var(--gold-strong); }
+.status-btn.current{ background:var(--gold); color:var(--brown-strong); border-color:var(--gold); }
+.status-btn.cancel-btn.current{ background:var(--danger); color:#fff; border-color:var(--danger); }
+.status-btn.cancel-btn:hover{ border-color:var(--danger); color:var(--danger); }
+.courier-select{ padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:.82rem; max-width:170px; }
+.courier-manager{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:26px; }
+.courier-manager .add-row{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+.courier-manager .add-row input{ padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); }
+.courier-chip{ display:inline-flex; align-items:center; gap:8px; background:var(--bg-alt); border-radius:999px; padding:6px 8px 6px 14px; font-size:.85rem; margin:4px 6px 0 0; }
+.courier-chip button{ background:none; border:none; color:var(--danger); cursor:pointer; font-size:.9rem; padding:2px 6px; }

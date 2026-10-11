@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Return Policy — Mihurma</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="returns">
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="legal-page">
+      <p class="eyebrow">Legal</p>
+      <h1>Return Policy</h1>
+      <p class="updated">Last updated: <span id="today"></span></p>
+
+      <div class="legal-note">
+        📝 This is a general-purpose template. Adjust the timeframes and conditions below to match what
+        you can actually offer, and check your local consumer-protection laws — many regions set a legal
+        minimum return window regardless of store policy.
+      </div>
+
+      <h2>1. Our Promise</h2>
+      <p>We want you to love what you ordered. If something isn't right, you can return most items within
+      <strong>30 days</strong> of delivery for a refund or exchange.</p>
+
+      <h2>2. Eligibility</h2>
+      <ul>
+        <li>Items must be unused, unworn, and in their original packaging with tags attached.</li>
+        <li>You'll need your order number (found in your <a href="dashboard.html">account dashboard</a>).</li>
+        <li>Final sale, personalized, or intimate/hygiene items may not be eligible for return — this is noted on the product page when it applies.</li>
+      </ul>
+
+      <h2>3. How to Start a Return</h2>
+      <ul>
+        <li>Go to your <a href="dashboard.html">Orders</a> page and find the order</li>
+        <li>Contact us at <a href="mailto:hello@mihurma.com">hello@mihurma.com</a> with your order number and reason for return</li>
+        <li>We'll send you return instructions and a shipping label if applicable</li>
+      </ul>
+
+      <h2>4. Refunds</h2>
+      <p>Once we receive and inspect your return, we'll process your refund to your original payment method,
+      typically within 5-10 business days. Original shipping fees are non-refundable unless the return is
+      due to our error (wrong or defective item).</p>
+
+      <h2>5. Damaged or Incorrect Items</h2>
+      <p>If your order arrives damaged or isn't what you ordered, contact us within 7 days of delivery with
+      photos — we'll cover the cost of return shipping and send a replacement or full refund.</p>
+
+      <h2>6. Exchanges</h2>
+      <p>Need a different size or color? Let us know when you start your return and we'll prioritize getting
+      the right item to you.</p>
+
+      <h2>7. Questions</h2>
+      <p>Reach us anytime at <a href="mailto:hello@mihurma.com">hello@mihurma.com</a>.</p>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/api.js"></script>
+  <script src="js/includes.js"></script>
+  <script src="js/layout.js"></script>
+  <script>document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });</script>
+</body>
+</html>

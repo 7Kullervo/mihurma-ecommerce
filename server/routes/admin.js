@@ -21,7 +21,7 @@ router.get('/stats', async (req, res) => {
   const [[{ totalOrders }]] = await pool.query('SELECT COUNT(*) AS totalOrders FROM orders WHERE paid = 1');
   const [[{ totalRevenue }]] = await pool.query('SELECT COALESCE(SUM(total),0) AS totalRevenue FROM orders WHERE paid = 1');
   const [[{ totalProducts }]] = await pool.query('SELECT COUNT(*) AS totalProducts FROM products');
-  const [[{ totalUsers }]] = await pool.query('SELECT COUNT(*) AS totalUsers FROM users WHERE role = "customer"');
+  const [[{ totalUsers }]] = await pool.query("SELECT COUNT(*) AS totalUsers FROM users WHERE role = 'customer'");
   const [[{ lowStock }]] = await pool.query('SELECT COUNT(*) AS lowStock FROM products WHERE stock <= 5');
   const [recentOrders] = await pool.query(
     `SELECT o.id, o.status, o.total, o.created_at, u.name AS customer_name

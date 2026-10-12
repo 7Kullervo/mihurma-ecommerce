@@ -90,9 +90,26 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/me', requireAuth, async (req, res) => {
-  const [rows] = await pool.query('SELECT id, name, email, role, phone, address FROM users WHERE id = ?', [req.user.id]);
-  if (!rows.length) return res.status(404).json({ error: 'User not found.' });
-  res.json({ user: rows[0] });
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, name, email, role, phone, address FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    return res.json({ user: rows[0] });
+  } catch (err) {
+    console.error('Failed to fetch current user:', err.message);
+
+    if (!res.headersSent) {
+      return res.status(503).json({
+        error: 'Unable to retrieve your account right now. Please try again.'
+      });
+    }
+  }
 });
 
 router.put('/me', requireAuth, async (req, res) => {
